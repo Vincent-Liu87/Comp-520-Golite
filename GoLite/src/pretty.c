@@ -186,6 +186,7 @@ void prettyNode(Node *e)
 			break;
 			
 		case k_NodeKindElseStmt:
+			printf("else ");
 			if(e->val.else_stmt.if_stmt==NULL)
 			{
 				prettyNode(e->val.else_stmt.block_body);
