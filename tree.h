@@ -84,7 +84,6 @@ typedef enum{
 	//id type
 	k_NodeKindArrayType,
 	k_NodeKindSliceType,
-	k_NodeKindStructType,
 	k_NodeKindIdType,
 }TypeKind;
 
@@ -227,11 +226,16 @@ struct Exp{
 		struct { Exp *expression;}index;
 		struct { Exp *expression1; Exp *expression2;}builtins;
 		struct { Exp *identifier; Exp *expressions_opt;}func_call;
+		struct { Exp *identifiers; Exp *identifier;}identifiers;
     }val
 }
 
 // Function declerations
-//Node* newNode(NodeKind k, int lineno);
+Prog* newProg(int lineno);
+Decl* newDecl(DeclKind k, int lineno);
+Type* newType(TypeKind k, int lineno);
+Stmt* newStmt(StmtKind k, int lineno);
+Exp* newExp(ExpKind k, int lineno);
 Exp *newIdentifiers(Exp* ids, Exp* id, int lineno);
 Exp *newIdentifier(char* id, int lineno);
 Prog *newProgram(Decl* package_dec, Decl* top_decs, int lineno);
