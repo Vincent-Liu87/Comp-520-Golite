@@ -11,11 +11,11 @@ st_BOOL,
 st_UNDEFINED
 }SymbolType;
 
-typedef struct PROG PROG;
-typedef struct EXP EXP;
-typedef struct STMT STMT;
-typedef struct DECL DECL;
-typedef struct TYPE TYPE;
+typedef struct Prog Prog;
+typedef struct Exp Exp;
+typedef struct Stmt Stmt;
+typedef struct Decl Decl;
+typedef struct Type Type;
 
 typedef enum{
 	k_NodeKindPackageDec,
@@ -30,7 +30,7 @@ typedef enum{
 	k_NodeKindTypeDecLine,
 	k_NodeKindTypeDefs,
 	k_NodeKindTypeDef,
-	k_NodeKindTypeStruct,
+	
 	k_NodeKindStructBody,
 	//func dec
 	k_NodeKindFuncDec,
@@ -42,6 +42,7 @@ typedef enum{
 	//statements
 	k_NodeKindStatements,
 	k_NodeKindStatement,
+	k_NodeKindStatementDec,
 	k_NodeKindBlockDec,
 	k_NodeKindBlockBody,
 	k_NodeKindSimpleStatementDec,
@@ -85,6 +86,8 @@ typedef enum{
 	k_NodeKindArrayType,
 	k_NodeKindSliceType,
 	k_NodeKindIdType,
+	k_NodeKindStructType,
+	k_NodeKindParType,
 }TypeKind;
 
 typedef enum{
@@ -139,17 +142,17 @@ typedef enum{
 
 struct Prog{
 	int lineno;
-	SYMBOL *symbol;
-	SymbolType type;
-    typeData evalValue;
+	//SYMBOL *symbol;
+	//SymbolType type;
+    //typeData evalValue;
 	struct { Decl *package_dec; Decl *top_decs; } program;
-}
+};
 
 struct Decl{
 	int lineno;
-	SYMBOL *symbol;
-	SymbolType type;
-    typeData evalValue;
+	//SYMBOL *symbol;
+	//SymbolType type;
+    //typeData evalValue;
     DeclKind kind;
     union{
     	struct { Exp *identifier;} package_dec;
@@ -160,35 +163,36 @@ struct Decl{
 		struct { Decl *def;}type_dec;
 		struct { Decl *type_defs; Decl *type_def;}type_defs;
 		struct { Type *identifier; Type *identifier_type;}type_def;
-		struct { Type *identifier; Decl *struct_body;}type_struct;
-		struct { Decl *struct_body; Exp *identifiers; Type *identifier_type;}struct_body;
 		struct { Exp *identifier; Decl *func_params; Decl *func_type; Stmt *block_body;}func_dec;
 		struct { Decl *func_params; Exp *identifiers; Type *identifier_type;}func_params;
 		struct { Type *identifier_type;}func_type;
-    }val
-}
+    }val;
+};
 
 struct Type{
 	int lineno;
-	SYMBOL *symbol;
-	SymbolType type;
-    typeData evalValue;
+	//SYMBOL *symbol;
+	//SymbolType type;
+    //typeData evalValue;
     TypeKind kind;
     union{
     	char *identifier;
-    	struct { int size; Type *identifier_type}identifier_type;
-    }val
-}
+    	struct { int size; Type *identifier_type;}identifier_type;
+    	//struct { int size; Type *struct_type;}struct_type;
+    	struct { Type *struct_body; Exp *identifiers; Type *type;}struct_body;
+    }val;
+};
 
 struct Stmt{
 	int lineno;
-	SYMBOL *symbol;
-	SymbolType type;
-    typeData evalValue;
+	//SYMBOL *symbol;
+	//SymbolType type;
+    //typeData evalValue;
     StmtKind kind;
     union{
 		struct { Stmt *statements; Stmt *statement;}statements;
 		struct { Stmt *stmt;} statement;
+		struct { Decl *decl;} statement_dec;
 		struct { Stmt *block_body;}block_dec;
 		struct { Stmt *statements;}block_body;
 		struct { Stmt *statement;}simple_statement_dec;
@@ -202,14 +206,14 @@ struct Stmt{
 		struct { Stmt *switch_def; Stmt *switch_cases;}switch_dec;
 		struct { Stmt *simple_statement; Exp *expression_opt;}switch_def;
 		struct { Stmt *cases; Exp *expressions; Stmt *statements;}switch_cases;
-    }val
-}
+    }val;
+};
 
 struct Exp{
 	int lineno;
-	SYMBOL *symbol;
-	SymbolType type;
-    typeData evalValue;
+	//SYMBOL *symbol;
+	//SymbolType type;
+    //typeData evalValue;
     ExpKind kind;
     union{
     	char *identifier;
@@ -221,14 +225,14 @@ struct Exp{
 		struct { Exp *expression;}expression;
 		struct { Exp *lhs; Exp *rhs;}binary;
 		struct { Exp *operand;}unary;
-		struct { Exp *primary_expression; Exp *selector; Exp *index; Exp *identifier;}primary_expression;
+		struct { Exp *primary_expression; Exp *selector; Exp *index; Exp *expression;}primary_expression;
 		struct { Exp *identifier;}selector;
 		struct { Exp *expression;}index;
 		struct { Exp *expression1; Exp *expression2;}builtins;
 		struct { Exp *identifier; Exp *expressions_opt;}func_call;
 		struct { Exp *identifiers; Exp *identifier;}identifiers;
-    }val
-}
+    }val;
+};
 
 // Function declerations
 Prog* newProg(int lineno);
@@ -243,25 +247,29 @@ Decl *newPackage_dec(Exp* identifier, int lineno);
 Decl *newTop_decs(Decl* top_decs, Decl* dec, int lineno);
 Decl *newVarDec(Decl* def, DeclKind kind, int lineno);
 Decl *newVarDefs(Decl* defs, Decl* def, int lineno);
-Decl *newVarDef(Decl* identifiers, Type* identifier_type, Exp* expressions, int lineno);
+Decl *newVarDef(Exp* identifiers, Type* identifier_type, Exp* expressions, int lineno);
 Decl *newTypeDec(Decl* def, DeclKind kind, int lineno);
 Decl *newTypeDefs(Decl* type_defs, Decl* type_def, int lineno);
 Decl *newTypeDef(Type* identifier, Type* identifier_type, int lineno);
-Decl *newTypeStruct(Type* identifier, Decl* struct_body, int lineno);
-Decl *newStructBody(Decl *struct_body, Exp *ids, Type *identifier_type, int lineno);
-Decl *newFuncDec(Exp* id, Decl* params, Type* id_type, Stmt* block, int lineno);
+Decl *newTypeStruct(Type* identifer, Type* struct_type, int lineno);
+
+Decl *newFuncDec(Exp* id, Decl* params, Decl* func_type, Stmt* block, int lineno);
 Decl *newFuncParams(Decl* func_params, Exp* ids, Type* id_type, int lineno);
 Decl *newFuncType(Type* id_type, int lineno);
 
+Type *newIdType(char *identifer, int lineno);
+Type *newStructBody(Type *struct_body, Exp *identifiers, Type *type, int lineno);
+//Type *newStructType(int size, Type *struct_type, TypeKind kind, int lineno)
 Type *newIdentifierType(int size, Type *identifier_type, TypeKind kind, int lineno);
 
 Stmt *newStatements(Stmt *statements, Stmt *statement, int lineno);
 Stmt *newStatement(Stmt *stmt, int lineno);
+Stmt *newStatementDec(Decl *decl, int lineno);
 Stmt *newBlockBody(Stmt *statements, int lineno);
 Stmt *newSimpleStatementDec(Stmt *statement, int lineno);
 Stmt *newSimpleStatement(Exp *lhs, Exp *rhs, StmtKind kind, int lineno);
-Stmt *newPrintStatement(Stmt *expression_opt, StmtKind kind, int lineno);
-Stmt *newReturnStatement(Stmt *expression_opt, int lineno);
+Stmt *newPrintStatement(Exp *expression_opt, StmtKind kind, int lineno);
+Stmt *newReturnStatement(Exp *expression_opt, int lineno);
 Stmt *newIfStmt(Stmt* simple_statement_dec, Exp *expression, Stmt* block_body, Stmt* else_stmt, int lineno);
 Stmt *newElseStmt(Stmt *if_stmt, Stmt* block_body, int lineno);
 Stmt *newForDec(Stmt *for_condition, Stmt* block_body, int lineno);
